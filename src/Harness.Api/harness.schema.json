@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Romain-OD/copilot-sdk-agent-harness/harness.schema.json",
+  "title": "harness.yaml",
+  "description": "Configuration for copilot-sdk-agent-harness. The server re-validates on load (HarnessConfig.Validate); this schema gives IDE completion.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["defaultProfile", "profiles"],
+  "properties": {
+    "defaultProfile": { "type": "string", "description": "Profile used when none is given." },
+    "policy": { "$ref": "#/$defs/policy", "description": "Global tool policy. A profile's own policy replaces it." },
+    "profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/profile" }
+    },
+    "evals": { "type": "array", "items": { "$ref": "#/$defs/eval" } }
+  },
+  "$defs": {
+    "decision": { "enum": ["allow", "deny", "ask"] },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "default": { "$ref": "#/$defs/decision", "default": "ask" },
+        "rules": {
+          "type": "array",
+          "description": "First matching rule wins.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["decision"],
+            "properties": {
+              "tool": { "type": "string", "default": "*", "description": "Tool name glob: view, mcp_*, *" },
+              "args": { "type": "string", "description": "Regex matched against the JSON arguments." },
+              "decision": { "$ref": "#/$defs/decision" }
+            }
+          }
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "engine": { "enum": ["copilot", "maf"], "default": "copilot", "description": "copilot = GitHub Copilot SDK, maf = Microsoft Agent Framework HarnessAgent." },
+        "model": { "type": "string", "description": "Model id. For copilot, see the Config tab or GET /api/models." },
+        "systemPrompt": { "type": "string" },
+        "workingDirectory": { "type": "string", "description": "Folder the agent works in (copilot engine)." },
+        "provider": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["baseUrl"],
+          "description": "BYOK. Omit to use the Copilot subscription (copilot engine only).",
+          "properties": {
+            "type": { "enum": ["openai", "azure", "anthropic"], "default": "openai", "description": "maf supports openai only (any OpenAI-compatible endpoint)." },
+            "baseUrl": { "type": "string", "minLength": 1 },
+            "apiKeyEnv": { "type": "string", "description": "Name of the environment variable holding the key." }
+          }
+        },
+        "mcpServers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "oneOf": [{ "required": ["command"] }, { "required": ["url"] }],
+            "properties": {
+              "command": { "type": "string" },
+              "args": { "type": "array", "items": { "type": "string" } },
+              "url": { "type": "string" },
+              "tools": { "type": "array", "items": { "type": "string" }, "default": ["*"] }
+            }
+          }
+        },
+        "policy": { "$ref": "#/$defs/policy" },
+        "disable": {
+          "type": "array",
+          "description": "MAF HarnessAgent features to turn off.",
+          "items": { "enum": ["webSearch", "fileMemory", "todos", "agentMode", "skills", "compaction"] }
+        },
+        "pricing": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "USD per 1M tokens, used for the cost shown per run.",
+          "properties": { "inputPer1M": { "type": "number" }, "outputPer1M": { "type": "number" } }
+        }
+      }
+    },
+    "eval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "prompt"],
+      "properties": {
+        "name": { "type": "string" },
+        "prompt": { "type": "string" },
+        "profiles": { "type": "array", "items": { "type": "string" }, "description": "Empty = all profiles." },
+        "contains": { "type": "array", "items": { "type": "string" } },
+        "notContains": { "type": "array", "items": { "type": "string" } },
+        "toolsCalled": { "type": "array", "items": { "type": "string" } },
+        "noDeniedTools": { "type": "boolean" }
+      }
+    }
+  }
+}

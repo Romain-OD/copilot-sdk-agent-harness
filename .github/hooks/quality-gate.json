@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "hooks": {
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": "./.github/hooks/quality-gate.sh",
+        "powershell": "./.github/hooks/quality-gate.ps1",
+        "cwd": ".",
+        "timeoutSec": 240
+      }
+    ]
+  }
+}

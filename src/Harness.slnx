@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Harness.Api/Harness.Api.csproj" />
+  <Project Path="Harness.Tests/Harness.Tests.csproj" />
+</Solution>
